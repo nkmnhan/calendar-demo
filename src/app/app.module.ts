@@ -6,10 +6,12 @@ import { AppComponent } from './app.component';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SchedulerModule } from '@progress/kendo-angular-scheduler';
+import { TeamCalendarComponent } from './team-calendar/team-calendar.component';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    TeamCalendarComponent,
   ],
   imports: [
     BrowserModule,
@@ -18,6 +20,7 @@ import { SchedulerModule } from '@progress/kendo-angular-scheduler';
     SchedulerModule
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  entryComponents: [TeamCalendarComponent]
 })
 export class AppModule { }
