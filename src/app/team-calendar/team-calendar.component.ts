@@ -192,6 +192,18 @@ export class TeamCalendarComponent implements AfterViewInit {
           ],
         },
         editable: false,
+        dataBound: function(e){
+          if(this.view().title === 'Quaterly'){
+            let height = this.timeline.view()._slots.length * 2.65;
+            this.list.thead.find("tr").height(height + "em");
+            this.list._adjustHeight();
+          }
+          else{
+            let height = this.timeline.view()._slots.length * 2.63;
+            this.list.thead.find("tr").height(height + "em");
+            this.list._adjustHeight();
+          }
+        }
       })
       .data('kendoGantt');
 
