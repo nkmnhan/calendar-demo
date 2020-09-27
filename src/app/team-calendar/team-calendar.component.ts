@@ -1,5 +1,7 @@
+import { element } from 'protractor';
 import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import '@progress/kendo-ui';
+import { ThrowStmt } from '@angular/compiler';
 
 declare var kendo: any;
 
@@ -10,6 +12,9 @@ declare var kendo: any;
 })
 export class TeamCalendarComponent implements AfterViewInit {
   @ViewChild('gantt') el: ElementRef;
+  @ViewChild('.k-gantt-header .k-toolbar .k-gantt-toolbar') header: ElementRef;
+
+  gantt: any;
 
   serviceRoot = 'https://demos.telerik.com/kendo-ui/service';
   tasksDataSource = new kendo.data.GanttDataSource({
@@ -104,7 +109,7 @@ export class TeamCalendarComponent implements AfterViewInit {
   constructor() {}
 
   ngAfterViewInit(): void {
-    kendo
+    this.gantt = kendo
       .jQuery(this.el.nativeElement)
       .kendoGantt({
         dataSource: this.tasksDataSource,
@@ -199,12 +204,25 @@ export class TeamCalendarComponent implements AfterViewInit {
           },
         ],
         toolbar: ['append', 'pdf'],
-        height: 700,
         listWidth: '50%',
         showWorkHours: false,
         showWorkDays: false,
         snap: false,
+        editable: false
       })
       .data('kendoGantt');
+
+    this.ganttSetting();
+  }
+
+  ganttSetting() {
+    this.gantt.element.find('.k-gantt-create').remove();
+    this.gantt.element.find('.k-gantt-pdf').remove();
+    this.gantt.element.find('.k-gantt-footer').remove();
+    this.gantt.resize();
+  }
+
+  editable(e){
+    debugger
   }
 }
