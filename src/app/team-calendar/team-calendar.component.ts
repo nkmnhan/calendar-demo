@@ -109,120 +109,186 @@ export class TeamCalendarComponent implements AfterViewInit {
   constructor() {}
 
   ngAfterViewInit(): void {
+    kendo.ui.GanttCustomView = kendo.ui.GanttView.extend({
+      name: 'custom',
+
+      options: {
+        yearHeaderTemplate: kendo.template("#=kendo.toString(start, 'yyyy')#"),
+        quarterHeaderTemplate: kendo.template(
+          "# return ['Q1', 'Q2', 'Q3', 'Q4'][start.getMonth() / 3] #"
+        ),
+        monthHeaderTemplate: kendo.template("#=kendo.toString(start, 'MMM')#"),
+      },
+
+      range: function (range) {
+        this.start = new Date('01/01/2013');
+        this.end = new Date('01/01/2016');
+      },
+
+      _generateSlots: function (incrementCallback, span) {
+        var slots = [];
+        var slotStart = new Date(this.start);
+        var slotEnd;
+
+        while (slotStart < this.end) {
+          slotEnd = new Date(slotStart);
+          incrementCallback(slotEnd);
+
+          slots.push({ start: slotStart, end: slotEnd, span: span });
+
+          slotStart = slotEnd;
+        }
+
+        return slots;
+      },
+
+      _createSlots: function () {
+        var slots = [];
+
+        slots.push(
+          this._generateSlots(function (date) {
+            date.setFullYear(date.getFullYear() + 1);
+          }, 12)
+        );
+        slots.push(
+          this._generateSlots(function (date) {
+            date.setMonth(date.getMonth() + 3);
+          }, 3)
+        );
+        slots.push(
+          this._generateSlots(function (date) {
+            date.setMonth(date.getMonth() + 1);
+          }, 1)
+        );
+
+        return slots;
+      },
+
+      _layout: function () {
+        var rows = [];
+        var options = this.options;
+
+        rows.push(
+          this._slotHeaders(
+            this._slots[0],
+            kendo.template(options.yearHeaderTemplate)
+          )
+        );
+        rows.push(
+          this._slotHeaders(
+            this._slots[1],
+            kendo.template(options.quarterHeaderTemplate)
+          )
+        );
+        rows.push(
+          this._slotHeaders(
+            this._slots[2],
+            kendo.template(options.monthHeaderTemplate)
+          )
+        );
+
+        return rows;
+      },
+    });
+
     this.gantt = kendo
       .jQuery(this.el.nativeElement)
       .kendoGantt({
-        dataSource: this.tasksDataSource,
-        dependencies: this.dependenciesDataSource,
-        resources: {
-          field: 'resources',
-          dataColorField: 'Color',
-          dataTextField: 'Name',
-          dataSource: {
-            transport: {
-              read: {
-                url: this.serviceRoot + '/GanttResources',
-                dataType: 'jsonp',
-              },
-            },
-            schema: {
-              model: {
-                id: 'id',
-                fields: {
-                  id: { from: 'ID', type: 'number' },
-                },
-              },
-            },
-          },
-        },
-        assignments: {
-          dataTaskIdField: 'TaskID',
-          dataResourceIdField: 'ResourceID',
-          dataValueField: 'Units',
-          dataSource: {
-            transport: {
-              read: {
-                url: this.serviceRoot + '/GanttResourceAssignments',
-                dataType: 'jsonp',
-              },
-              update: {
-                url: this.serviceRoot + '/GanttResourceAssignments/Update',
-                dataType: 'jsonp',
-              },
-              destroy: {
-                url: this.serviceRoot + '/GanttResourceAssignments/Destroy',
-                dataType: 'jsonp',
-              },
-              create: {
-                url: this.serviceRoot + '/GanttResourceAssignments/Create',
-                dataType: 'jsonp',
-              },
-              parameterMap: function (options, operation) {
-                if (operation !== 'read') {
-                  return {
-                    models: kendo.stringify(options.models || [options]),
-                  };
-                }
-              },
-            },
-            schema: {
-              model: {
-                id: 'ID',
-                fields: {
-                  ID: { type: 'number' },
-                  ResourceID: { type: 'number' },
-                  Units: { type: 'number' },
-                  TaskID: { type: 'number' },
-                },
-              },
-            },
-          },
-        },
-        views: ['day', { type: 'week', selected: true }, 'month'],
         columns: [
-          { field: 'title', title: 'Task', editable: true, width: 255 },
           {
-            field: 'start',
-            title: 'Actual Start Date',
-            format: '{0:M/d/yyyy}',
-            editable: true,
-            width: 130,
+            field: 'id',
+            title: 'ID',
+            sortable: true,
+            editable: false,
+            width: 30,
           },
           {
-            field: 'end',
-            title: 'Actual End Date',
-            format: '{0:M/d/yyyy}',
-            editable: true,
-            width: 130,
-          },
-          {
-            field: 'percentComplete',
-            title: '% Complete',
-            type: 'number',
+            field: 'title',
+            title: 'Title',
+            sortable: true,
             editable: true,
             width: 100,
           },
+          {
+            field: 'start',
+            title: 'Start Time',
+            sortable: true,
+            editable: true,
+            format: '{0:MM/dd/yyyy HH:mm}',
+            width: 100,
+          },
+          {
+            field: 'end',
+            title: 'End Time',
+            sortable: true,
+            editable: true,
+            format: '{0:MM/dd/yyyy HH:mm}',
+            width: 100,
+          },
         ],
-        toolbar: ['append', 'pdf'],
-        listWidth: '50%',
-        showWorkHours: false,
-        showWorkDays: false,
-        snap: false,
-        editable: false
+        views: [
+          'week',
+          'month',
+          {
+            type: 'kendo.ui.GanttCustomView',
+            title: 'Quaterly',
+            selected: true,
+          },
+        ],
+        listWidth: 500,
+        dataSource: {
+          data: [
+            {
+              id: 1,
+              parentId: null,
+              percentComplete: 0.2,
+              orderId: 0,
+              title: 'foo',
+              start: new Date('05/05/2014 09:00'),
+              end: new Date('06/06/2014 10:00'),
+            },
+            {
+              id: 2,
+              parentId: null,
+              percentComplete: 0.4,
+              orderId: 1,
+              title: 'bar',
+              start: new Date('07/06/2014 12:00'),
+              end: new Date('08/07/2014 13:00'),
+            },
+          ],
+        },
+        dependencies: {
+          data: [{ id: 1, predecessorId: 1, successorId: 2, type: 1 }],
+        },
+        editable: false,
       })
       .data('kendoGantt');
-
-    this.ganttSetting();
   }
 
-  ganttSetting() {
-    this.gantt.element.find('.k-gantt-create').remove();
-    this.gantt.element.find('.k-gantt-pdf').remove();
-    this.gantt.element.find('.k-gantt-footer').remove();
-    this.gantt.resize();
-  }
-
-  editable(e){
-    debugger
+  onClickMe() {
+    var dataSource = new kendo.data.GanttDataSource({
+      data: [
+        {
+          id: 1,
+          parentId: null,
+          percentComplete: 0.2,
+          orderId: 0,
+          title: 'foo1',
+          start: new Date('05/05/2014 09:00'),
+          end: new Date('06/06/2014 10:00'),
+        },
+        {
+          id: 2,
+          parentId: null,
+          percentComplete: 0.4,
+          orderId: 1,
+          title: 'bar1',
+          start: new Date('07/06/2014 12:00'),
+          end: new Date('08/07/2014 13:00'),
+        },
+      ],
+    });
+    this.gantt.setDataSource(dataSource);
   }
 }
