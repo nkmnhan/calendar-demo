@@ -1,6 +1,4 @@
 import { Component } from '@angular/core';
-import { SchedulerEvent } from '@progress/kendo-angular-scheduler';
-import { sampleData, displayDate } from './events-utc';
 
 @Component({
   selector: 'app-root',
@@ -9,6 +7,4 @@ import { sampleData, displayDate } from './events-utc';
 })
 export class AppComponent {
   title = 'calendar-demo';
-  public selectedDate: Date = displayDate;
-  public events: SchedulerEvent[] = sampleData;
 }
