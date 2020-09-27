@@ -1,7 +1,5 @@
-import { element } from 'protractor';
 import { Component, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import '@progress/kendo-ui';
-import { ThrowStmt } from '@angular/compiler';
 
 declare var kendo: any;
 
@@ -15,96 +13,6 @@ export class TeamCalendarComponent implements AfterViewInit {
   @ViewChild('.k-gantt-header .k-toolbar .k-gantt-toolbar') header: ElementRef;
 
   gantt: any;
-
-  serviceRoot = 'https://demos.telerik.com/kendo-ui/service';
-  tasksDataSource = new kendo.data.GanttDataSource({
-    transport: {
-      read: {
-        url: this.serviceRoot + '/GanttTasks',
-        dataType: 'jsonp',
-      },
-      update: {
-        url: this.serviceRoot + '/GanttTasks/Update',
-        dataType: 'jsonp',
-      },
-      destroy: {
-        url: this.serviceRoot + '/GanttTasks/Destroy',
-        dataType: 'jsonp',
-      },
-      create: {
-        url: this.serviceRoot + '/GanttTasks/Create',
-        dataType: 'jsonp',
-      },
-      parameterMap: function (options, operation) {
-        if (operation !== 'read') {
-          return { models: kendo.stringify(options.models || [options]) };
-        }
-      },
-    },
-    schema: {
-      model: {
-        id: 'id',
-        fields: {
-          id: { from: 'ID', type: 'number' },
-          orderId: {
-            from: 'OrderID',
-            type: 'number',
-            validation: { required: true },
-          },
-          parentId: {
-            from: 'ParentID',
-            type: 'number',
-            defaultValue: null,
-            nullable: true,
-            validation: { required: true },
-          },
-          start: { from: 'Start', type: 'date' },
-          end: { from: 'End', type: 'date' },
-          title: { from: 'Title', defaultValue: '', type: 'string' },
-          percentComplete: { from: 'PercentComplete', type: 'number' },
-          summary: { from: 'Summary', type: 'boolean' },
-          expanded: { from: 'Expanded', type: 'boolean', defaultValue: true },
-        },
-      },
-    },
-  });
-
-  dependenciesDataSource = new kendo.data.GanttDependencyDataSource({
-    transport: {
-      read: {
-        url: this.serviceRoot + '/GanttDependencies',
-        dataType: 'jsonp',
-      },
-      update: {
-        url: this.serviceRoot + '/GanttDependencies/Update',
-        dataType: 'jsonp',
-      },
-      destroy: {
-        url: this.serviceRoot + '/GanttDependencies/Destroy',
-        dataType: 'jsonp',
-      },
-      create: {
-        url: this.serviceRoot + '/GanttDependencies/Create',
-        dataType: 'jsonp',
-      },
-      parameterMap: function (options, operation) {
-        if (operation !== 'read') {
-          return { models: kendo.stringify(options.models || [options]) };
-        }
-      },
-    },
-    schema: {
-      model: {
-        id: 'id',
-        fields: {
-          id: { from: 'ID', type: 'number' },
-          predecessorId: { from: 'PredecessorID', type: 'number' },
-          successorId: { from: 'SuccessorID', type: 'number' },
-          type: { from: 'Type', type: 'number' },
-        },
-      },
-    },
-  });
 
   constructor() {}
 
@@ -196,35 +104,12 @@ export class TeamCalendarComponent implements AfterViewInit {
       .kendoGantt({
         columns: [
           {
-            field: 'id',
-            title: 'ID',
-            sortable: true,
-            editable: false,
-            width: 30,
-          },
-          {
             field: 'title',
             title: 'Title',
             sortable: true,
             editable: true,
             width: 100,
-          },
-          {
-            field: 'start',
-            title: 'Start Time',
-            sortable: true,
-            editable: true,
-            format: '{0:MM/dd/yyyy HH:mm}',
-            width: 100,
-          },
-          {
-            field: 'end',
-            title: 'End Time',
-            sortable: true,
-            editable: true,
-            format: '{0:MM/dd/yyyy HH:mm}',
-            width: 100,
-          },
+          }
         ],
         views: [
           'week',
@@ -238,55 +123,222 @@ export class TeamCalendarComponent implements AfterViewInit {
         listWidth: 500,
         dataSource: {
           data: [
+            // John
             {
               id: 1,
               parentId: null,
-              percentComplete: 0.2,
               orderId: 0,
-              title: 'foo',
-              start: new Date('05/05/2014 09:00'),
-              end: new Date('06/06/2014 10:00'),
+              title: 'John',
+              start: new Date('1/06/2014 12:00'),
+              end: new Date('12/06/2014 12:00'),
             },
             {
               id: 2,
-              parentId: null,
-              percentComplete: 0.4,
-              orderId: 1,
-              title: 'bar',
-              start: new Date('07/06/2014 12:00'),
-              end: new Date('08/07/2014 13:00'),
+              parentId: 1,
+              orderId: 0,
+              title: 'course 1',
+              start: new Date('1/06/2014 12:00'),
+              end: new Date('4/06/2014 12:00'),
             },
+            {
+              id: 3,
+              parentId: 1,
+              orderId: 0,
+              title: 'course 2',
+              start: new Date('4/06/2014 12:00'),
+              end: new Date('7/06/2014 12:00'),
+            },
+            {
+              id: 4,
+              parentId: 1,
+              orderId: 0,
+              title: 'course 3',
+              start: new Date('7/06/2014 12:00'),
+              end: new Date('12/06/2014 12:00'),
+            },
+            // Annie
+            {
+              id: 5,
+              parentId: null,
+              orderId: 0,
+              title: 'Annie',
+              start: new Date('6/06/2014 12:00'),
+              end: new Date('12/06/2014 12:00'),
+            },
+            {
+              id: 6,
+              parentId: 5,
+              orderId: 0,
+              title: 'course 1',
+              start: new Date('6/06/2014 12:00'),
+              end: new Date('8/06/2014 12:00'),
+            },
+            {
+              id: 7,
+              parentId: 5,
+              orderId: 0,
+              title: 'course 2',
+              start: new Date('8/06/2014 12:00'),
+              end: new Date('10/06/2014 12:00'),
+            },
+            {
+              id: 8,
+              parentId: 5,
+              orderId: 0,
+              title: 'course 3',
+              start: new Date('10/06/2014 12:00'),
+              end: new Date('12/06/2014 12:00'),
+            }
           ],
-        },
-        dependencies: {
-          data: [{ id: 1, predecessorId: 1, successorId: 2, type: 1 }],
         },
         editable: false,
       })
       .data('kendoGantt');
+
+      this.setting();
+  }
+
+  setting() {
+    var height = this.gantt.timeline.view()._slots.length * 2.65;
+    this.gantt.list.thead.find("tr").height(height + "em");
+    this.gantt.list._adjustHeight();
   }
 
   onClickMe() {
     var dataSource = new kendo.data.GanttDataSource({
       data: [
+        // John
         {
           id: 1,
           parentId: null,
-          percentComplete: 0.2,
           orderId: 0,
-          title: 'foo1',
-          start: new Date('05/05/2014 09:00'),
-          end: new Date('06/06/2014 10:00'),
+          title: 'John',
+          start: new Date('1/06/2014 12:00'),
+          end: new Date('12/06/2014 12:00'),
         },
         {
           id: 2,
-          parentId: null,
-          percentComplete: 0.4,
-          orderId: 1,
-          title: 'bar1',
-          start: new Date('07/06/2014 12:00'),
-          end: new Date('08/07/2014 13:00'),
+          parentId: 1,
+          orderId: 0,
+          title: 'course 1',
+          start: new Date('1/06/2014 12:00'),
+          end: new Date('4/06/2014 12:00'),
         },
+        {
+          id: 3,
+          parentId: 1,
+          orderId: 0,
+          title: 'course 2',
+          start: new Date('4/06/2014 12:00'),
+          end: new Date('7/06/2014 12:00'),
+        },
+        {
+          id: 4,
+          parentId: 1,
+          orderId: 0,
+          title: 'course 3',
+          start: new Date('7/06/2014 12:00'),
+          end: new Date('12/06/2014 12:00'),
+        },
+        // Annie
+        {
+          id: 5,
+          parentId: null,
+          orderId: 0,
+          title: 'Annie',
+          start: new Date('6/06/2014 12:00'),
+          end: new Date('12/06/2014 12:00'),
+        },
+        {
+          id: 6,
+          parentId: 5,
+          orderId: 0,
+          title: 'course 1',
+          start: new Date('6/06/2014 12:00'),
+          end: new Date('8/06/2014 12:00'),
+        },
+        {
+          id: 7,
+          parentId: 5,
+          orderId: 0,
+          title: 'course 2',
+          start: new Date('8/06/2014 12:00'),
+          end: new Date('10/06/2014 12:00'),
+        },
+        {
+          id: 8,
+          parentId: 5,
+          orderId: 0,
+          title: 'course 3',
+          start: new Date('10/06/2014 12:00'),
+          end: new Date('12/06/2014 12:00'),
+        },
+        // Tony
+        {
+          id: 9,
+          parentId: null,
+          orderId: 0,
+          title: 'Tony',
+          start: new Date('1/06/2015 12:00'),
+          end: new Date('12/06/2015 12:00'),
+        },
+        {
+          id: 10,
+          parentId: 9,
+          orderId: 0,
+          title: 'course 1',
+          start: new Date('1/06/2015 12:00'),
+          end: new Date('4/06/2015 12:00'),
+        },
+        {
+          id: 11,
+          parentId: 9,
+          orderId: 0,
+          title: 'course 2',
+          start: new Date('4/06/2015 12:00'),
+          end: new Date('7/06/2015 12:00'),
+        },
+        {
+          id: 12,
+          parentId: 9,
+          orderId: 0,
+          title: 'course 3',
+          start: new Date('7/06/2015 12:00'),
+          end: new Date('12/06/2015 12:00'),
+        },
+        // Jack
+        {
+          id: 13,
+          parentId: null,
+          orderId: 0,
+          title: 'Jack',
+          start: new Date('6/06/2013 12:00'),
+          end: new Date('12/06/2013 12:00'),
+        },
+        {
+          id: 14,
+          parentId: 13,
+          orderId: 0,
+          title: 'course 1',
+          start: new Date('6/06/2013 12:00'),
+          end: new Date('8/06/2013 12:00'),
+        },
+        {
+          id: 15,
+          parentId: 13,
+          orderId: 0,
+          title: 'course 2',
+          start: new Date('8/06/2013 12:00'),
+          end: new Date('10/06/2013 12:00'),
+        },
+        {
+          id: 16,
+          parentId: 13,
+          orderId: 0,
+          title: 'course 3',
+          start: new Date('10/06/2013 12:00'),
+          end: new Date('12/06/2013 12:00'),
+        }
       ],
     });
     this.gantt.setDataSource(dataSource);
