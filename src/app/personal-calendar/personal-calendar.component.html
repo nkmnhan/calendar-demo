@@ -1,20 +1,22 @@
 <kendo-scheduler
-        [kendoSchedulerBinding]="editService.events | async"
-        [modelFields]="editService.fields"
-        [loading]="editService.loading"
-        [editable]="true"
-        [selectedViewIndex]="0"
-        [selectedDate]="selectedDate"
-        (slotDblClick)="slotDblClickHandler($event)"
-        (eventDblClick)="eventDblClickHandler($event)"
-        (cancel)="cancelHandler($event)"
-        (save)="saveHandler($event)"
-        (remove)="removeHandler($event)"
-        (dragEnd)="dragEndHandler($event)"
-        (resizeEnd)="resizeEndHandler($event)"
-        style="height: 600px;"
-    >
-        <kendo-scheduler-week-view startTime="07:00">
-        </kendo-scheduler-week-view>
-
-    </kendo-scheduler>
+  [kendoSchedulerBinding]="editService.events | async"
+  [modelFields]="editService.fields"
+  [loading]="editService.loading"
+  [editable]="true"
+  [selectedDate]="selectedDate"
+  (slotDblClick)="slotDblClickHandler($event)"
+  (eventDblClick)="eventDblClickHandler($event)"
+  (remove)="removeHandler($event)"
+  style="height: 400px"
+>
+  <kendo-scheduler-week-view startTime="07:00"> </kendo-scheduler-week-view>
+  <scheduler-edit-form
+    [event]="editedEvent"
+    [editMode]="editMode"
+    [isNew]="isNew"
+    (save)="saveHandler($event)"
+    (cancel)="cancelHandler()"
+    style="display: block; margin-top: 20px"
+  >
+  </scheduler-edit-form>
+</kendo-scheduler>
