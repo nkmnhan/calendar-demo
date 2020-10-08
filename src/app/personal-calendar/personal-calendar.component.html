@@ -1,13 +1,20 @@
 <kendo-scheduler
-  [kendoSchedulerBinding]="events"
-  [selectedDate]="selectedDate"
-  [kendoSchedulerReactiveEditing]="createFormGroup"
-  scrollTime="08:00"
-  style="height: 600px"
->
-  <kendo-scheduler-day-view> </kendo-scheduler-day-view>
+        [kendoSchedulerBinding]="editService.events | async"
+        [modelFields]="editService.fields"
+        [loading]="editService.loading"
+        [editable]="true"
+        [selectedViewIndex]="0"
+        [selectedDate]="selectedDate"
+        (slotDblClick)="slotDblClickHandler($event)"
+        (eventDblClick)="eventDblClickHandler($event)"
+        (cancel)="cancelHandler($event)"
+        (save)="saveHandler($event)"
+        (remove)="removeHandler($event)"
+        (dragEnd)="dragEndHandler($event)"
+        (resizeEnd)="resizeEndHandler($event)"
+        style="height: 600px;"
+    >
+        <kendo-scheduler-week-view startTime="07:00">
+        </kendo-scheduler-week-view>
 
-  <kendo-scheduler-week-view> </kendo-scheduler-week-view>
-
-  <kendo-scheduler-month-view> </kendo-scheduler-month-view>
-</kendo-scheduler>
+    </kendo-scheduler>

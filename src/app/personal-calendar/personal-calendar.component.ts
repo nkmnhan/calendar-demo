@@ -1,15 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import {
-  SchedulerEvent,
-  CreateFormGroupArgs,
-} from '@progress/kendo-angular-scheduler';
-import {
-  FormGroup,
   FormBuilder,
+  FormControl,
+  FormGroup,
   Validators,
-  ValidatorFn,
 } from '@angular/forms';
-import { sampleData, displayDate } from '../events-utc';
+import {
+  CancelEvent,
+  CrudOperation,
+  EditMode,
+  EventClickEvent,
+  RemoveEvent,
+  SaveEvent,
+  SchedulerComponent,
+  SlotClickEvent,
+} from '@progress/kendo-angular-scheduler';
+import '@progress/kendo-date-math/tz/regions/Europe';
+import '@progress/kendo-date-math/tz/regions/NorthAmerica';
+import { filter } from 'rxjs/operators';
+
+import { EditService } from './edit.service';
 
 @Component({
   selector: 'app-personal-calendar',
@@ -17,55 +27,232 @@ import { sampleData, displayDate } from '../events-utc';
   styleUrls: ['./personal-calendar.component.scss'],
 })
 export class PersonalCalendarComponent implements OnInit {
-  public selectedDate: Date = displayDate;
-  public events: SchedulerEvent[] = sampleData;
-
+  public selectedDate: Date = new Date('2013-06-10T00:00:00');
   public formGroup: FormGroup;
 
-  constructor(private formBuilder: FormBuilder) {
-    this.createFormGroup = this.createFormGroup.bind(this);
+  constructor(
+    public formBuilder: FormBuilder,
+    public editService: EditService
+  ) {}
+
+  public ngOnInit(): void {
+    this.editService.read();
   }
 
-  public createFormGroup(args: CreateFormGroupArgs): FormGroup {
-    const dataItem = args.dataItem;
+  public slotDblClickHandler({
+    sender,
+    start,
+    end,
+    isAllDay,
+  }: SlotClickEvent): void {
+    this.closeEditor(sender);
 
-    this.formGroup = this.formBuilder.group(
-      {
-        id: args.isNew ? this.getNextId() : dataItem.id,
-        start: [dataItem.start, Validators.required],
-        end: [dataItem.end, Validators.required],
-        startTimezone: [dataItem.startTimezone],
-        endTimezone: [dataItem.endTimezone],
-        isAllDay: dataItem.isAllDay,
-        title: dataItem.title,
-        description: dataItem.description,
-        recurrenceRule: dataItem.recurrenceRule,
-        recurrenceId: dataItem.recurrenceId,
-      },
-      {
-        validator: this.startEndValidator,
-      }
-    );
+    this.formGroup = this.formBuilder.group({
+      Start: [start, Validators.required],
+      End: [end, Validators.required],
+      StartTimezone: new FormControl(),
+      EndTimezone: new FormControl(),
+      IsAllDay: isAllDay,
+      Title: new FormControl(''),
+      Description: new FormControl(''),
+      RecurrenceRule: new FormControl(),
+      RecurrenceID: new FormControl(),
+    });
 
-    return this.formGroup;
+    sender.addEvent(this.formGroup);
   }
 
-  ngOnInit(): void {}
+  public eventDblClickHandler({ sender, event }: EventClickEvent): void {
+    this.closeEditor(sender);
 
-  public getNextId(): number {
-    const len = this.events.length;
-
-    return len === 0 ? 1 : this.events[this.events.length - 1].id + 1;
-  }
-
-  public startEndValidator: ValidatorFn = (fg: FormGroup) => {
-    const start = fg.get('start').value;
-    const end = fg.get('end').value;
-
-    if (start !== null && end !== null && start.getTime() < end.getTime()) {
-      return null;
+    let dataItem = event.dataItem;
+    if (this.editService.isRecurring(dataItem)) {
+      sender
+        .openRecurringConfirmationDialog(CrudOperation.Edit)
+        // The result will be undefined if the dialog was closed.
+        .pipe(filter((editMode) => editMode !== undefined))
+        .subscribe((editMode: EditMode) => {
+          if (editMode === EditMode.Series) {
+            dataItem = this.editService.findRecurrenceMaster(dataItem);
+          }
+          this.formGroup = this.createFormGroup(dataItem);
+          sender.editEvent(dataItem, { group: this.formGroup, mode: editMode });
+        });
     } else {
-      return { range: 'End date must be greater than Start date' };
+      this.formGroup = this.createFormGroup(dataItem);
+      sender.editEvent(dataItem, { group: this.formGroup });
     }
-  };
+  }
+
+  public createFormGroup(dataItem: any): FormGroup {
+    return this.formBuilder.group({
+      Start: [dataItem.Start, Validators.required],
+      End: [dataItem.End, Validators.required],
+      StartTimezone: [dataItem.StartTimezone],
+      EndTimezone: [dataItem.EndTimezone],
+      IsAllDay: dataItem.IsAllDay,
+      Title: dataItem.Title,
+      Description: dataItem.Description,
+      RecurrenceRule: dataItem.RecurrenceRule,
+      RecurrenceID: dataItem.RecurrenceID,
+    });
+  }
+
+  public cancelHandler({ sender }: CancelEvent): void {
+    this.closeEditor(sender);
+  }
+
+  public removeHandler({ sender, dataItem }: RemoveEvent): void {
+    if (this.editService.isRecurring(dataItem)) {
+      sender
+        .openRecurringConfirmationDialog(CrudOperation.Remove)
+        // The result will be undefined if the dialog was closed.
+        .pipe(filter((editMode) => editMode !== undefined))
+        .subscribe((editMode) => {
+          this.handleRemove(dataItem, editMode);
+        });
+    } else {
+      sender.openRemoveConfirmationDialog().subscribe((shouldRemove) => {
+        if (shouldRemove) {
+          this.editService.remove(dataItem);
+        }
+      });
+    }
+  }
+
+  public saveHandler({
+    sender,
+    formGroup,
+    isNew,
+    dataItem,
+    mode,
+  }: SaveEvent): void {
+    if (formGroup.valid) {
+      const formValue = formGroup.value;
+
+      if (isNew) {
+        this.editService.create(formValue);
+      } else {
+        this.handleUpdate(dataItem, formValue, mode);
+      }
+
+      this.closeEditor(sender);
+    }
+  }
+
+  public dragEndHandler({ sender, event, start, end, isAllDay }): void {
+    let value = { Start: start, End: end, IsAllDay: isAllDay };
+    let dataItem = event.dataItem;
+
+    if (this.editService.isRecurring(dataItem)) {
+      sender
+        .openRecurringConfirmationDialog(CrudOperation.Edit)
+        .pipe(filter((editMode) => editMode !== undefined))
+        .subscribe((editMode: EditMode) => {
+          if (editMode === EditMode.Series) {
+            dataItem = this.editService.findRecurrenceMaster(dataItem);
+            value.Start = this.seriesDate(
+              dataItem.Start,
+              event.dataItem.Start,
+              start
+            );
+            value.End = this.seriesDate(dataItem.End, event.dataItem.End, end);
+          } else {
+            value = { ...dataItem, ...value };
+          }
+
+          this.handleUpdate(dataItem, value, editMode);
+        });
+    } else {
+      this.handleUpdate(dataItem, value);
+    }
+  }
+
+  public resizeEndHandler({ sender, event, start, end }): void {
+    let value = { Start: start, End: end };
+    let dataItem = event.dataItem;
+
+    if (this.editService.isRecurring(dataItem)) {
+      sender
+        .openRecurringConfirmationDialog(CrudOperation.Edit)
+        .pipe(filter((editMode) => editMode !== undefined))
+        .subscribe((editMode: EditMode) => {
+          if (editMode === EditMode.Series) {
+            dataItem = this.editService.findRecurrenceMaster(dataItem);
+            value.Start = this.seriesDate(
+              dataItem.Start,
+              event.dataItem.Start,
+              start
+            );
+            value.End = this.seriesDate(dataItem.End, event.dataItem.End, end);
+          } else {
+            value = { ...dataItem, ...value };
+          }
+
+          this.handleUpdate(dataItem, value, editMode);
+        });
+    } else {
+      this.handleUpdate(dataItem, value);
+    }
+  }
+
+  private closeEditor(scheduler: SchedulerComponent): void {
+    scheduler.closeEvent();
+
+    this.formGroup = undefined;
+  }
+
+  private handleUpdate(item: any, value: any, mode?: EditMode): void {
+    const service = this.editService;
+    if (mode === EditMode.Occurrence) {
+      if (service.isException(item)) {
+        service.update(item, value);
+      } else {
+        service.createException(item, value);
+      }
+    } else {
+      // The item is non-recurring or we are editing the entire series.
+      service.update(item, value);
+    }
+  }
+
+  private handleRemove(item: any, mode: EditMode): void {
+    const service = this.editService;
+    if (mode === EditMode.Series) {
+      service.removeSeries(item);
+    } else if (mode === EditMode.Occurrence) {
+      if (service.isException(item)) {
+        service.remove(item);
+      } else {
+        service.removeOccurrence(item);
+      }
+    } else {
+      service.remove(item);
+    }
+  }
+
+  private seriesDate(head: Date, occurence: Date, current: Date): Date {
+    const year =
+      occurence.getFullYear() === current.getFullYear()
+        ? head.getFullYear()
+        : current.getFullYear();
+    const month =
+      occurence.getMonth() === current.getMonth()
+        ? head.getMonth()
+        : current.getMonth();
+    const date =
+      occurence.getDate() === current.getDate()
+        ? head.getDate()
+        : current.getDate();
+    const hours =
+      occurence.getHours() === current.getHours()
+        ? head.getHours()
+        : current.getHours();
+    const minutes =
+      occurence.getMinutes() === current.getMinutes()
+        ? head.getMinutes()
+        : current.getMinutes();
+
+    return new Date(year, month, date, hours, minutes);
+  }
 }
